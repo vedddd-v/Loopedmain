@@ -27,9 +27,21 @@ export default function LoginPage() {
     try {
       await signIn(email, password)
       router.push("/dashboard")
-    } catch (error) {
-      setError("Invalid email or password. Please try again.")
+    } catch (error: any) {
       console.error("Login error:", error)
+
+      // More specific error handling
+      if (error?.message?.includes("Failed to fetch")) {
+        setError("Connection error. Please check your internet connection and try again.")
+      } else if (error?.message?.includes("Invalid login credentials")) {
+        setError("Invalid email or password. Please try again.")
+      } else if (error?.message?.includes("Email not confirmed")) {
+        setError("Please check your email and confirm your account before logging in.")
+      } else if (error?.message?.includes("Too many requests")) {
+        setError("Too many login attempts. Please wait a few minutes and try again.")
+      } else {
+        setError(error?.message || "An error occurred during login. Please try again.")
+      }
     }
   }
 

@@ -26,19 +26,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const setData = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession()
-      if (error) {
-        console.error(error)
-        setIsLoading(false)
-        return
-      }
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
 
-      setSession(session)
-      setUser(session?.user ?? null)
-      setIsLoading(false)
+        if (error) {
+          console.error("Session error:", error)
+          setIsLoading(false)
+          return
+        }
+
+        setSession(session)
+        setUser(session?.user ?? null)
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Auth initialization error:", error)
+        setIsLoading(false)
+      }
     }
 
     const {
@@ -96,9 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         router.push("/dashboard")
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in signUp:", error)
-      throw error
+      throw new Error(error?.message || "Sign up failed")
     } finally {
       setIsLoading(false)
     }
@@ -108,17 +114,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error("Sign in error:", error)
+        throw new Error(error.message)
+      }
 
-      router.push("/dashboard")
-    } catch (error) {
+      if (data.user) {
+        router.push("/dashboard")
+      }
+    } catch (error: any) {
       console.error("Error in signIn:", error)
-      throw error
+      throw new Error(error?.message || "Sign in failed")
     } finally {
       setIsLoading(false)
     }
@@ -133,9 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error
 
       router.push("/")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in signOut:", error)
-      throw error
+      throw new Error(error?.message || "Sign out failed")
     } finally {
       setIsLoading(false)
     }
